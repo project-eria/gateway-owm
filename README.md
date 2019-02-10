@@ -2,7 +2,7 @@
 
 https://www.openweathermap.org
 
-## Configuration file
+## Configuration file (gateway-owm.json)
 ````
 {
   "Lang": "fr",
@@ -11,11 +11,11 @@ https://www.openweathermap.org
   "APIKey": "<OWM API key>",
   "Place": "Paris,FR",
   "Devices": {
-    "addr": "<gateway xaal addr>",
-    "humidity": "<xaal addr>",
-    "pressure": "<xaal addr>",
-    "temperature": "<xaal addr>",
-    "wind": "<xaal addr>"
+    "addr": "<gateway xAAL address>",
+    "humidity": "<xAAL address>",
+    "pressure": "<xAAL address>",
+    "temperature": "<xAAL address>",
+    "wind": "<xAAL address>"
   }
 }
 ````
