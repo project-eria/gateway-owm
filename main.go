@@ -18,7 +18,7 @@ import (
 )
 
 func version() string {
-	return fmt.Sprintf("0.0.2 (engine %s)", engine.Version())
+	return fmt.Sprintf("0.0.2 - %s (engine commit %s)", engine.Timestamp, engine.GitCommit)
 }
 
 const configFile = "gateway-owm.json"
@@ -28,7 +28,7 @@ func setupDev(dev *device.Device) {
 	dev.ProductID = "OpenWeatherMap"
 	dev.Info = "gateway.owm@OpenWeatherMap"
 	dev.URL = "https://www.openweathermap.org"
-	dev.Version = "0.0.1"
+	dev.Version = version()
 }
 
 var config = struct {
