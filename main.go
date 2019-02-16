@@ -146,7 +146,6 @@ func getConfigAddr(key string) string {
 func update() {
 	_weather.CurrentByName(config.Place)
 	_devs[0].SetAttributeValue("temperature", _weather.Main.Temp) // TODO Round to 1 decimal
-	fmt.Println(_devs[0].GetTimeout())
 	engine.NotifyAttributesChange(_devs[0])
 	_devs[1].SetAttributeValue("humidity", _weather.Main.Humidity)
 	engine.NotifyAttributesChange(_devs[1])
