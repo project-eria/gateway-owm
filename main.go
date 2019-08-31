@@ -5,7 +5,7 @@ import (
 
 	"github.com/project-eria/eria-base"
 	configmanager "github.com/project-eria/eria-base/config-manager"
-	"github.com/project-eria/eria-logger"
+	logger "github.com/project-eria/eria-logger"
 	"github.com/project-eria/xaal-go"
 	"github.com/project-eria/xaal-go/device"
 	"github.com/project-eria/xaal-go/schemas"
