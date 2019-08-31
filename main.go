@@ -1,35 +1,33 @@
 package main
 
 import (
-	"flag"
-	"fmt"
 	"os"
-	"os/signal"
-	"runtime"
 
-	configmanager "github.com/project-eria/config-manager"
+	"github.com/project-eria/eria-base"
+	configmanager "github.com/project-eria/eria-base/config-manager"
 	"github.com/project-eria/logger"
+	"github.com/project-eria/xaal-go"
 	"github.com/project-eria/xaal-go/device"
-	"github.com/project-eria/xaal-go/engine"
 	"github.com/project-eria/xaal-go/schemas"
 	"github.com/project-eria/xaal-go/utils"
 
 	owm "github.com/briandowns/openweathermap"
 )
 
-func version() string {
-	return fmt.Sprintf("0.0.2 - %s (engine commit %s)", engine.Timestamp, engine.GitCommit)
-}
-
-const configFile = "gateway-owm.json"
+var (
+	// Version is a placeholder that will receive the git tag version during build time
+	Version = "-"
+)
 
 func setupDev(dev *device.Device) {
 	dev.VendorID = "ERIA"
 	dev.ProductID = "OpenWeatherMap"
 	dev.Info = "gateway.owm@OpenWeatherMap"
 	dev.URL = "https://www.openweathermap.org"
-	dev.Version = version()
+	dev.Version = Version
 }
+
+const configFile = "gateway-owm.json"
 
 var config = struct {
 	Lang    string `default:"fr"`
@@ -45,18 +43,10 @@ var _weather *owm.CurrentWeatherData
 
 func main() {
 	defer os.Exit(0)
-	_showVersion := flag.Bool("v", false, "Display the version")
-	if !flag.Parsed() {
-		flag.Parse()
-	}
 
-	// Show version (-v)
-	if *_showVersion {
-		fmt.Println(version())
-		os.Exit(0)
-	}
+	eria.AddShowVersion(Version)
 
-	logger.Module("main").Infof("Starting Gateway OWM %s...", version())
+	logger.Module("main").Infof("Starting Gateway OWM %s...", Version)
 
 	// Loading config
 	cm, err := configmanager.Init(configFile, &config)
@@ -77,25 +67,18 @@ func main() {
 	}
 	defer cm.Close()
 
-	engine.Init()
+	// Init xAAL engine
+	eria.InitEngine()
 
 	setup()
 	// Save for new Address during setup
 	cm.Save()
 
 	// Launch the xAAL engine
-	go engine.Run()
-	defer engine.Stop()
+	go xaal.Run()
+	defer xaal.Stop()
 
-	// Set up channel on which to send signal notifications.
-	// We must use a buffered channel or risk missing the signal
-	// if we're not ready to receive when the signal is sent.
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
-	// Block until keyboard interrupt is received.
-	<-c
-	runtime.Goexit()
+	eria.WaitForExit()
 }
 
 // setup : create devices, register ...
@@ -117,14 +100,14 @@ func setup() {
 	for _, dev := range _devs {
 		addresses = append(addresses, dev.Address)
 		setupDev(dev)
-		engine.AddDevice(dev)
+		xaal.AddDevice(dev)
 	}
 	gw.SetAttributeValue("embedded", addresses)
 	setupDev(gw)
-	engine.AddDevice(gw)
+	xaal.AddDevice(gw)
 
 	// OWM stuff
-	engine.AddTimer(update, config.Rate, -1)
+	xaal.AddTimer(update, config.Rate, -1)
 
 	// We are ready
 	var err error
@@ -146,17 +129,17 @@ func getConfigAddr(key string) string {
 func update() {
 	_weather.CurrentByName(config.Place)
 	_devs[0].SetAttributeValue("temperature", _weather.Main.Temp) // TODO Round to 1 decimal
-	engine.NotifyAttributesChange(_devs[0])
+	xaal.NotifyAttributesChange(_devs[0])
 	_devs[1].SetAttributeValue("humidity", _weather.Main.Humidity)
-	engine.NotifyAttributesChange(_devs[1])
+	xaal.NotifyAttributesChange(_devs[1])
 	_devs[2].SetAttributeValue("pressure", _weather.Main.Pressure)
-	engine.NotifyAttributesChange(_devs[2])
+	xaal.NotifyAttributesChange(_devs[2])
 
 	// TODO Metric: meter/sec, Imperial: miles/hour.
 	wind := _weather.Wind.Speed * 3600 / 1000        // m/s => km/h
 	_devs[3].SetAttributeValue("windStrength", wind) // TODO Round to 1 decimal
 	_devs[3].SetAttributeValue("windAngle", _weather.Wind.Deg)
-	engine.NotifyAttributesChange(_devs[3])
+	xaal.NotifyAttributesChange(_devs[3])
 	logger.Module("main").WithFields(logger.Fields{
 		"temperature":  _weather.Main.Temp,
 		"humidity":     _weather.Main.Humidity,
